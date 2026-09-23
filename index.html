@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mettatec X5R Pro Updater</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "pako": "https://unpkg.com/pako@2.1.0/dist/pako.esm.mjs",
+          "atob-lite": "https://unpkg.com/atob-lite@2.0.0/atob-browser.js"
+        }
+      }
+    </script>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script type="module" src="script.js"></script>
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Load Google Fonts (Inter) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Load Phosphor Icons for a clean, modern look -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  </head>
+
+  <body
+    class="bg-slate-50 min-h-screen flex flex-col font-sans text-slate-800 selection:bg-sky-100 selection:text-sky-700"
+  >
+    <!-- Header -->
+    <header class="w-full p-6 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <!-- Simulated Logo (You can replace this with an actual img tag) -->
+        <div
+          class="w-8 h-8 rounded bg-sky-600 flex items-center justify-center text-white font-bold text-lg shadow-sm"
+        >
+          M
+        </div>
+        <span class="font-bold text-xl tracking-tight text-slate-800"
+          >mettatec</span
+        >
+      </div>
+      <div
+        class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100"
+      >
+        Web Updater v1.0
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex items-center justify-center p-4">
+      <div
+        class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 w-full max-w-lg overflow-hidden border border-slate-100 transition-all duration-500"
+      >
+        <!-- Card Header -->
+        <div class="p-8 pb-6 border-b border-slate-50">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl font-bold text-slate-900">X5R Pro Update</h1>
+            <div
+              id="statusBadge"
+              class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 transition-colors"
+            >
+              <i class="ph-fill ph-plug"></i>
+              <span id="statusText">Disconnected</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-sm">
+            Keep your device up to date with the latest features and
+            improvements.
+          </p>
+        </div>
+
+        <div class="p-8 relative min-h-[280px] flex flex-col justify-center">
+          <!-- Panel 1: Connect Device (Initial State) -->
+          <div
+            id="panelConnect"
+            class="absolute inset-0 p-8 flex flex-col items-center justify-center bg-white z-10 transition-opacity duration-300"
+          >
+            <div
+              class="w-16 h-16 bg-sky-50 text-sky-600 rounded-full flex items-center justify-center mb-6"
+            >
+              <i class="ph ph-usb text-3xl"></i>
+            </div>
+            <h2 class="text-lg font-semibold text-slate-800 mb-2">
+              Connect your device
+            </h2>
+            <p class="text-center text-slate-500 text-sm mb-8 px-4">
+              Plug your X5R Pro into your computer via USB. Chrome, Edge, or
+              Opera is required to use Web Serial.
+            </p>
+            <button
+              id="btnConnect"
+              class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-3.5 px-6 rounded-xl shadow-md shadow-sky-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <i class="ph ph-plugs"></i>
+              Connect X5R Pro
+            </button>
+          </div>
+
+          <!-- Panel 2: Checking Status -->
+          <div
+            id="panelChecking"
+            class="absolute inset-0 p-8 flex flex-col items-center justify-center bg-white z-0 opacity-0 pointer-events-none transition-opacity duration-300"
+          >
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mb-4"
+            ></div>
+            <h2 class="text-lg font-semibold text-slate-800 mb-1">
+              Checking firmware...
+            </h2>
+            <p class="text-slate-500 text-sm text-center">
+              Reading current version from X5R Pro.
+            </p>
+          </div>
+
+          <!-- Panel 3: Update Available (or Up to Date) -->
+          <div
+            id="panelUpdateAction"
+            class="absolute inset-0 p-8 flex flex-col justify-center bg-white z-0 opacity-0 pointer-events-none transition-opacity duration-300"
+          >
+            <div
+              class="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100"
+            >
+              
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-slate-500"
+                  >Available Version</span
+                >
+                <span class="text-sm font-bold text-sky-600">v2.0.1</span>
+              </div>
+            </div>
+
+            <div
+              id="updateMessage"
+              class="mb-6 flex items-start gap-3 bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-100"
+            >
+              <i class="ph-fill ph-warning-circle text-xl mt-0.5"></i>
+              <p class="text-sm">
+                A new firmware update is required for optimal performance.
+              </p>
+            </div>
+
+            <button
+              id="btnStartUpdate"
+              class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-3.5 px-6 rounded-xl shadow-md shadow-sky-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <i class="ph ph-download-simple"></i>
+              Update Now
+            </button>
+          </div>
+
+          <!-- Panel 4: Updating Progress -->
+          <div
+            id="panelProgress"
+            class="absolute inset-0 p-8 flex flex-col justify-center bg-white z-0 opacity-0 pointer-events-none transition-opacity duration-300"
+          >
+            <h2 class="text-lg font-semibold text-slate-800 mb-1">
+              Installing Update
+            </h2>
+            <p class="text-slate-500 text-sm mb-6">
+              Please do not disconnect the device or close this window.
+            </p>
+
+            <div class="mb-2 flex justify-between items-end">
+              <span id="progressText" class="text-sm font-medium text-sky-600"
+                >Erasing flash...</span
+              >
+              <span
+                id="progressPercent"
+                class="text-2xl font-bold text-slate-800"
+                >0%</span
+              >
+            </div>
+
+            <!-- Progress Bar -->
+            <div
+              class="w-full bg-slate-100 h-3 rounded-full overflow-hidden mb-6 shadow-inner"
+            >
+              <div
+                id="progressBar"
+                class="bg-sky-600 h-full rounded-full w-0 transition-all duration-300 ease-out relative"
+              >
+                <!-- Shimmer effect -->
+                <div
+                  class="absolute top-0 left-0 bottom-0 right-0 overflow-hidden rounded-full"
+                >
+                  <div
+                    class="w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite]"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal Log -->
+            <div
+              class="bg-slate-900 rounded-xl p-3 h-24 overflow-y-auto log-container shadow-inner"
+            >
+              <pre
+                id="terminalLog"
+                class="text-[11px] font-mono text-emerald-400 m-0 leading-tight"
+              ></pre>
+            </div>
+          </div>
+
+          <!-- Panel 5: Success -->
+          <div
+            id="panelSuccess"
+            class="absolute inset-0 p-8 flex flex-col items-center justify-center bg-white z-0 opacity-0 pointer-events-none transition-opacity duration-300 text-center"
+          >
+            <div
+              class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6"
+            >
+              <i class="ph-fill ph-check-circle text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">
+              Update Complete!
+            </h2>
+            <p class="text-slate-500 text-sm mb-8">
+              Your X5R Pro has been successfully updated to the latest firmware.
+              You can now safely disconnect the device.
+            </p>
+            <button
+              id="btnDone"
+              class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 px-6 rounded-xl transition-all active:scale-[0.98]"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+
+        <!-- Safe Area Footer -->
+        <div class="bg-slate-50 py-3 text-center border-t border-slate-100">
+          <span
+            class="text-xs text-slate-400 font-medium flex items-center justify-center gap-1"
+          >
+            <i class="ph-fill ph-lock-key"></i> Secure Web Serial Connection
+          </span>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
