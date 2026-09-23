@@ -10,10 +10,10 @@ async function fetchBinary(url) {
 
 async function buildFlashOptions(onProgress) {
   const fileArray = [
-    { data: await fetchBinary("/bin/bootloader.bin"), address: 0x2000 },
-    { data: await fetchBinary("/bin/partition-table.bin"), address: 0x8000 },
-    { data: await fetchBinary("/bin/ota_data_initial.bin"), address: 0xf000 },
-    { data: await fetchBinary("/bin/x5r_pro.bin"), address: 0x20000 },
+    { data: await fetchBinary("./bin/bootloader.bin"), address: 0x2000 },
+    { data: await fetchBinary("./bin/partition-table.bin"), address: 0x8000 },
+    { data: await fetchBinary("./bin/ota_data_initial.bin"), address: 0xf000 },
+    { data: await fetchBinary("./bin/x5r_pro.bin"), address: 0x20000 },
   ];
 
   return {
