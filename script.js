@@ -18,7 +18,7 @@ async function buildFlashOptions(onProgress) {
 
   return {
     fileArray,
-    flashMode: "qio",
+    flashMode: "dio",
     flashFreq: "80m",
     flashSize: "16MB",
     eraseAll: false,
@@ -99,18 +99,14 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     writeLine(data) {
       logMsg(data);
-      console.log(data);
+      console.log("console: " + data);
     },
     write(data) {
       termLog.innerHTML += data;
       termLog.parentElement.scrollTop = termLog.parentElement.scrollHeight;
-      console.log(data);
+      console.log("console data: " + data);
     },
   };
-
-  async function connectWithEsptool() {
-    return await esploader;
-  }
 
   async function handleConnect() {
     try {
@@ -134,6 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const chipName = await esploader.main();
+      const chipRevision = await esploader.chip.getChipRevision(esploader);
+      console.log(`Chip revision: ${chipRevision}`);
 
       setStatus("connected");
 
@@ -141,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       logMsg(`Connected to: ${chipName}`);
 
       setTimeout(() => {
-        checkFirmwareVersion();
+        showPanel("updateAction");
       }, 1);
     } catch (error) {
       console.error("Connection failed", error);
@@ -153,14 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       showPanel("connect");
     }
-  }
-
-  function checkFirmwareVersion() {
-    //currentVersionLabel.innerText = "v1.0.4";
-
-    setTimeout(() => {
-      showPanel("updateAction");
-    }, 1000);
   }
 
   async function handleStartUpdate() {
