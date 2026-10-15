@@ -12,7 +12,9 @@ Web Serial requires a secure context, so the connect flow only works from `http:
 
 The Connect flow now uses `esptool-js` in the browser to identify the connected ESP chip and print the connection details into the on-page log.
 
-The reset flow now disconnects the esptool transport before closing the Web Serial port so the device is fully released when you leave the update flow.
+After flashing, the updater now uses the official esptool-js reset API (`esploader.after("hard_reset")`) instead of manual serial line toggling.
+
+The reset flow then disconnects the esptool transport before closing the Web Serial port so the device is fully released when you leave the update flow.
 
 The bundled X5R Pro firmware images are compiled for the ESP32-P4 and use DIO flash mode. The browser updater must match that flash mode; forcing QIO can corrupt the flash transaction and stop the serial stream halfway through an update.
 

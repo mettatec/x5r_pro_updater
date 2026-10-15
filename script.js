@@ -27,7 +27,6 @@ async function buildFlashOptions(onProgress) {
   };
 }
 
-
 async function buildFlashOptions_P4X(onProgress) {
   const fileArray = [
     { data: await fetchBinary("./bin/bootloader.bin"), address: 0x2000 },
@@ -186,28 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     //await esploader.writeFlash(options); // flash firmware
 
-    logMsg("Hard resetting via the ESP32 boot control lines...");
-
-    if (transport) {
-      console.log("Performing classic ESP reset with DTR/RTS signals...");
-
-      if (typeof transport.setSignals === "function") {
-        await transport.setSignals(false, true);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await transport.setSignals(true, false);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await transport.setSignals(false, false);
-      } else {
-        await transport.setDTR(false);
-        await transport.setRTS(true);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await transport.setDTR(true);
-        await transport.setRTS(false);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await transport.setDTR(false);
-        await transport.setRTS(false);
-      }
-    }
+    logMsg("Running esptool hard reset...");
+    await esploader.after("hard_reset");
     logMsg("Update complete.");
     prgTxt.innerText = "Finishing up...";
 
