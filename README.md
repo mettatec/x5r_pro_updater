@@ -16,4 +16,6 @@ The reset flow now disconnects the esptool transport before closing the Web Seri
 
 The bundled X5R Pro firmware images are compiled for the ESP32-P4 and use DIO flash mode. The browser updater must match that flash mode; forcing QIO can corrupt the flash transaction and stop the serial stream halfway through an update.
 
+The ESP32-P4 reset path uses the classic DTR/RTS control pair from esptool-js rather than a single RTS pulse. A bare RTS-only toggle can leave some USB serial bridges in an unclear boot/reset state.
+
 Progress updates are shown as whole-number percentages in the UI.

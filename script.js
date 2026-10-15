@@ -18,7 +18,7 @@ async function buildFlashOptions(onProgress) {
 
   return {
     fileArray,
-    flashMode: "dio",
+    flashMode: "qio",
     flashFreq: "80m",
     flashSize: "16MB",
     eraseAll: false,
@@ -27,6 +27,25 @@ async function buildFlashOptions(onProgress) {
   };
 }
 
+
+async function buildFlashOptions_P4X(onProgress) {
+  const fileArray = [
+    { data: await fetchBinary("./bin/bootloader.bin"), address: 0x2000 },
+    { data: await fetchBinary("./bin/partition-table.bin"), address: 0x9000 },
+    { data: await fetchBinary("./bin/ota_data_initial.bin"), address: 0x10000 },
+    { data: await fetchBinary("./bin/x5r_pro.bin"), address: 0x20000 },
+  ];
+
+  return {
+    fileArray,
+    flashMode: "qio",
+    flashFreq: "80m",
+    flashSize: "16MB",
+    eraseAll: false,
+    compress: true,
+    reportProgress: onProgress,
+  };
+}
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
     connect: document.getElementById("panelConnect"),
@@ -123,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       esploader = new ESPLoader({
         transport,
-        baudrate: 921600,
+        baudrate: 115200,
         romBaudrate: 115200,
         terminal,
         debugLogging: false,
@@ -159,19 +178,35 @@ document.addEventListener("DOMContentLoaded", () => {
     logMsg("Starting esptool session...");
     logMsg("Connecting to ESP32-P4...");
 
-    const options = await buildFlashOptions((fileIndex, written, total) => {
+    const options = await buildFlashOptions_P4X((fileIndex, written, total) => {
       const percent = total > 0 ? (written / total) * 100 : 0;
       updateProgressUI(percent);
       prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
     });
 
-    await esploader.writeFlash(options); // flash firmware
+    //await esploader.writeFlash(options); // flash firmware
 
-    logMsg("Hard resetting via RTS pin...");
+    logMsg("Hard resetting via the ESP32 boot control lines...");
+
     if (transport) {
-      await transport.setDTR(false);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await transport.setDTR(true);
+      console.log("Performing classic ESP reset with DTR/RTS signals...");
+
+      if (typeof transport.setSignals === "function") {
+        await transport.setSignals(false, true);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await transport.setSignals(true, false);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await transport.setSignals(false, false);
+      } else {
+        await transport.setDTR(false);
+        await transport.setRTS(true);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await transport.setDTR(true);
+        await transport.setRTS(false);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await transport.setDTR(false);
+        await transport.setRTS(false);
+      }
     }
     logMsg("Update complete.");
     prgTxt.innerText = "Finishing up...";
