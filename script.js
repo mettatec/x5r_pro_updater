@@ -10,10 +10,16 @@ async function fetchBinary(url) {
 
 async function buildFlashOptions(onProgress) {
   const fileArray = [
-    { data: await fetchBinary("./bin/bootloader.bin"), address: 0x2000 },
-    { data: await fetchBinary("./bin/partition-table.bin"), address: 0x8000 },
-    { data: await fetchBinary("./bin/ota_data_initial.bin"), address: 0xf000 },
-    { data: await fetchBinary("./bin/x5r_pro.bin"), address: 0x20000 },
+    { data: await fetchBinary("./bin_p4/bootloader.bin"), address: 0x2000 },
+    {
+      data: await fetchBinary("./bin_p4/partition-table.bin"),
+      address: 0x8000,
+    },
+    {
+      data: await fetchBinary("./bin_p4/ota_data_initial.bin"),
+      address: 0xf000,
+    },
+    { data: await fetchBinary("./bin_p4/x5r_pro.bin"), address: 0x20000 },
   ];
 
   return {
@@ -29,10 +35,16 @@ async function buildFlashOptions(onProgress) {
 
 async function buildFlashOptions_P4X(onProgress) {
   const fileArray = [
-    { data: await fetchBinary("./bin/bootloader.bin"), address: 0x2000 },
-    { data: await fetchBinary("./bin/partition-table.bin"), address: 0x9000 },
-    { data: await fetchBinary("./bin/ota_data_initial.bin"), address: 0x10000 },
-    { data: await fetchBinary("./bin/x5r_pro.bin"), address: 0x20000 },
+    { data: await fetchBinary("./bin_p4x/bootloader.bin"), address: 0x2000 },
+    {
+      data: await fetchBinary("./bin_p4x/partition-table.bin"),
+      address: 0x9000,
+    },
+    {
+      data: await fetchBinary("./bin_p4x/ota_data_initial.bin"),
+      address: 0x10000,
+    },
+    { data: await fetchBinary("./bin_p4x/x5r_pro.bin"), address: 0x20000 },
   ];
 
   return {
@@ -67,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let serialPort = null;
   let esploader = null;
   let transport = null;
+  let chipRevision = null;
 
   function showPanel(panelName) {
     Object.values(panels).forEach((panel) => {
@@ -148,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const chipName = await esploader.main();
-      const chipRevision = await esploader.chip.getChipRevision(esploader);
+      chipRevision = await esploader.chip.getChipRevision(esploader);
       console.log(`Chip revision: ${chipRevision}`);
 
       setStatus("connected");
@@ -156,9 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log(`Connected to chip: ${chipName}`);
       logMsg(`Connected to: ${chipName}`);
 
-      setTimeout(() => {
-        showPanel("updateAction");
-      }, 1);
+      showPanel("updateAction");
     } catch (error) {
       console.error("Connection failed", error);
       serialPort = null;
@@ -177,16 +188,33 @@ document.addEventListener("DOMContentLoaded", () => {
     logMsg("Starting esptool session...");
     logMsg("Connecting to ESP32-P4...");
 
-    const options = await buildFlashOptions_P4X((fileIndex, written, total) => {
-      const percent = total > 0 ? (written / total) * 100 : 0;
-      updateProgressUI(percent);
-      prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
-    });
+    if (chipRevision > 300) {
+      const options = await buildFlashOptions_P4X(
+        (fileIndex, written, total) => {
+          const percent = total > 0 ? (written / total) * 100 : 0;
+          updateProgressUI(percent);
+          prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
+        },
+      );
+    } else {
+      const options = await buildFlashOptions((fileIndex, written, total) => {
+        const percent = total > 0 ? (written / total) * 100 : 0;
+        updateProgressUI(percent);
+        prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
+      });
+    }
 
     //await esploader.writeFlash(options); // flash firmware
 
-    logMsg("Running esptool hard reset...");
-    await esploader.after("hard_reset");
+    logMsg("Hard resetting via RTS pin...");
+
+    if (transport) {
+      console.log("Performing hard reset via RTS pin...");
+      await transport.setDTR(false);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await transport.setDTR(true);
+    }
+
     logMsg("Update complete.");
     prgTxt.innerText = "Finishing up...";
 
