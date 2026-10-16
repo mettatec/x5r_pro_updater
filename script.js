@@ -188,8 +188,9 @@ document.addEventListener("DOMContentLoaded", () => {
     logMsg("Starting esptool session...");
     logMsg("Connecting to ESP32-P4...");
 
+    let options;
     if (chipRevision > 300) {
-      const options = await buildFlashOptions_P4X(
+      options = await buildFlashOptions_P4X(
         (fileIndex, written, total) => {
           const percent = total > 0 ? (written / total) * 100 : 0;
           updateProgressUI(percent);
@@ -197,18 +198,21 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       );
     } else {
-      const options = await buildFlashOptions((fileIndex, written, total) => {
+      options = await buildFlashOptions((fileIndex, written, total) => {
         const percent = total > 0 ? (written / total) * 100 : 0;
         updateProgressUI(percent);
         prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
       });
     }
 
-    //await esploader.writeFlash(options); // flash firmware
+    await esploader.writeFlash(options); // flash firmware
 
     logMsg("Hard resetting via RTS pin...");
 
     if (transport) {
+      await transport.disconnect().catch(() => {});
+      console.log("Closing transport...");
+      await transport.connect();
       console.log("Performing hard reset via RTS pin...");
       await transport.setDTR(false);
       await new Promise((resolve) => setTimeout(resolve, 100));
