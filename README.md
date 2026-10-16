@@ -1,23 +1,79 @@
-# X5R Pro Updater
+# Mettatec X5R Pro Firmware Updater
 
-This workspace now separates the page into three files:
+This project is a browser-based firmware updater for the Mettatec X5R Pro. It uses the browser's Web Serial API and `esptool-js` to connect to the device over USB, detect the ESP chip, and flash a bundled firmware image.
 
-- `index.html` for the structure and external references
-- `styles.css` for the custom styling and animation definitions
-- `script.js` for the UI behavior and state handling
+## Overview
 
-Open `index.html` in a browser to run the updater UI.
+The updater is a small static web app designed for X5R Pro devices that run Espressif firmware. It lets a user:
 
-Web Serial requires a secure context, so the connect flow only works from `http://localhost`, `https://`, or another secure origin. Opening the page directly with `file://` will usually prevent port access.
+- connect the device over USB
+- detect the ESP chip and revision
+- load the correct firmware image set
+- write the flash image to the board
+- monitor progress through the UI
+- reset the device after the update completes
 
-The Connect flow now uses `esptool-js` in the browser to identify the connected ESP chip and print the connection details into the on-page log.
+This repository contains the UI, the updater logic, and the prebuilt firmware binaries used for flashing.
 
-After flashing, the updater now uses the official esptool-js reset API (`esploader.after("hard_reset")`) instead of manual serial line toggling.
+## Project structure
 
-The reset flow then disconnects the esptool transport before closing the Web Serial port so the device is fully released when you leave the update flow.
+- `index.html` — main UI and layout
+- `styles.css` — styling and animation
+- `script.js` — firmware update logic, Web Serial handling, and flash process
+- `bin_p4/` — firmware files for the ESP32-P4 image set
+- `bin_p4x/` — firmware files for the ESP32-P4X image set
+- `METTATEC-Logo.webp.png` — project branding
 
-The bundled X5R Pro firmware images are compiled for the ESP32-P4 and use DIO flash mode. The browser updater must match that flash mode; forcing QIO can corrupt the flash transaction and stop the serial stream halfway through an update.
+## Included firmware images
 
-The ESP32-P4 reset path uses the classic DTR/RTS control pair from esptool-js rather than a single RTS pulse. A bare RTS-only toggle can leave some USB serial bridges in an unclear boot/reset state.
+Each firmware directory contains:
 
-Progress updates are shown as whole-number percentages in the UI.
+- `bootloader.bin`
+- `partition-table.bin`
+- `ota_data_initial.bin`
+- `x5r_pro.bin`
+
+The updater chooses between `bin_p4/` and `bin_p4x/` based on the detected chip revision.
+
+## How to use
+
+Because Web Serial requires a secure context, the app must be served from a local web server or HTTPS origin, not opened directly as a `file://` page.
+
+Start a local server from the project folder:
+
+```bash
+python -m http.server 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000
+```
+
+Use Chromium-based browsers such as Chrome, Edge, or Opera for Web Serial support.
+
+1. Connect the X5R Pro to the computer via USB.
+2. Click `Connect X5R Pro` in the web app.
+3. Allow the browser to access the serial port.
+4. The app detects the ESP chip and prepares the update.
+5. Click `Update Now` to flash the firmware.
+6. Wait for the update to finish and then disconnect the device.
+
+## Notes
+
+- The app is static and has no build step.
+- The updater relies on `esptool-js` running in the browser.
+- The project is intended for firmware recovery or upgrade workflows on Mettatec X5R Pro hardware.
+- The update flow uses the browser's serial connection and only works in supported browsers.
+
+## Requirements
+
+- Chrome, Edge, or Opera
+- Web Serial support enabled by the browser
+- A connected X5R Pro device over USB
+- A secure origin (`localhost` or HTTPS)
+
+## Disclaimer
+
+This project is meant for flashing approved firmware builds for the X5R Pro. Use only the bundled images or firmware versions intended for the target hardware to avoid damaging the device during flashing.
