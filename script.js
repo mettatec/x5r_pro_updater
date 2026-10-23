@@ -13,11 +13,11 @@ async function buildFlashOptions(onProgress) {
     { data: await fetchBinary("./bin_p4/bootloader.bin"), address: 0x2000 },
     {
       data: await fetchBinary("./bin_p4/partition-table.bin"),
-      address: 0x8000,
+      address: 0x9000,
     },
     {
       data: await fetchBinary("./bin_p4/ota_data_initial.bin"),
-      address: 0xf000,
+      address: 0x10000,
     },
     { data: await fetchBinary("./bin_p4/x5r_pro.bin"), address: 0x20000 },
   ];
@@ -190,13 +190,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let options;
     if (chipRevision > 300) {
-      options = await buildFlashOptions_P4X(
-        (fileIndex, written, total) => {
-          const percent = total > 0 ? (written / total) * 100 : 0;
-          updateProgressUI(percent);
-          prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
-        },
-      );
+      options = await buildFlashOptions_P4X((fileIndex, written, total) => {
+        const percent = total > 0 ? (written / total) * 100 : 0;
+        updateProgressUI(percent);
+        prgTxt.innerText = `Writing image ${fileIndex + 1}...`;
+      });
     } else {
       options = await buildFlashOptions((fileIndex, written, total) => {
         const percent = total > 0 ? (written / total) * 100 : 0;
